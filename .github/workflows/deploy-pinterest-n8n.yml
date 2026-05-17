@@ -2,13 +2,6 @@ name: Deploy Pinterest n8n Automation
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "N8N/n8n Pinterest Auto Publish Process Build/pinterest-buffer-periodic-publisher.workflow.json"
-      - "automation/pinterest-n8n/**"
-      - ".github/workflows/deploy-pinterest-n8n.yml"
 
 jobs:
   deploy:
