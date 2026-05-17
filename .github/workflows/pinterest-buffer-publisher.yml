@@ -1,0 +1,59 @@
+name: Pinterest Buffer Publisher
+
+on:
+  schedule:
+    # GitHub cron uses UTC. This runs daily around 06:10 UTC; the script schedules
+    # the actual Buffer posts for Europe/Paris 09:00, 13:00, and 18:00.
+    - cron: "10 6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build payloads only; do not post to Buffer or update Google Sheets"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+concurrency:
+  group: pinterest-buffer-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: pin-automation/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r pin-automation/requirements.txt
+
+      - name: Run publisher
+        env:
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SPREADSHEET_ID: ${{ vars.SPREADSHEET_ID || '1ZGszsqsey9Pu08TrUMGq6gksatbHe2WNMLcw6fWV5BU' }}
+          SHEET_NAME: ${{ vars.SHEET_NAME || 'Sheet1' }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-4.1-mini' }}
+          POST_TIMEZONE: ${{ vars.POST_TIMEZONE || 'Europe/Paris' }}
+          POST_HOURS: ${{ vars.POST_HOURS || '9,13,18' }}
+          SLOTS_PER_RUN: ${{ vars.SLOTS_PER_RUN || '3' }}
+          DAYS_TO_QUEUE: ${{ vars.DAYS_TO_QUEUE || '1' }}
+          DEFAULT_PINTEREST_CHANNEL_ID: ${{ vars.DEFAULT_PINTEREST_CHANNEL_ID }}
+          DEFAULT_FACEBOOK_CHANNEL_ID: ${{ vars.DEFAULT_FACEBOOK_CHANNEL_ID }}
+          DEFAULT_INSTAGRAM_CHANNEL_ID: ${{ vars.DEFAULT_INSTAGRAM_CHANNEL_ID }}
+          DEFAULT_PINTEREST_BOARD_SERVICE_ID: ${{ vars.DEFAULT_PINTEREST_BOARD_SERVICE_ID }}
+          DRY_RUN: ${{ inputs.dry_run == 'true' && '1' || '0' }}
+        run: python pin-automation/publisher.py

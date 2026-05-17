@@ -1,0 +1,29 @@
+name: Deploy Pinterest n8n Automation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "N8N/n8n Pinterest Auto Publish Process Build/pinterest-buffer-periodic-publisher.workflow.json"
+      - "automation/pinterest-n8n/**"
+      - ".github/workflows/deploy-pinterest-n8n.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VPS_REPO_DIR }}"
+            git pull --ff-only
+            APP_DIR="${{ secrets.VPS_APP_DIR }}" bash automation/pinterest-n8n/scripts/deploy.sh
