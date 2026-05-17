@@ -23,7 +23,7 @@ from googleapiclient.discovery import build
 
 
 BUFFER_URL = "https://api.buffer.com"
-OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+DEFAULT_OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 OUTPUT_COLUMNS = [
@@ -54,6 +54,7 @@ class Config:
     sheet_name: str
     buffer_api_key: str
     openai_api_key: str
+    openai_url: str
     openai_model: str
     post_timezone: str
     post_hours: list[int]
@@ -93,6 +94,7 @@ def load_config() -> Config:
         sheet_name=os.environ.get("SHEET_NAME", "Sheet1"),
         buffer_api_key=os.environ["BUFFER_API_KEY"],
         openai_api_key=os.environ["OPENAI_API_KEY"],
+        openai_url=os.environ.get("OPENAI_URL", DEFAULT_OPENAI_URL),
         openai_model=os.environ.get("OPENAI_MODEL", "gpt-4.1-mini"),
         post_timezone=os.environ.get("POST_TIMEZONE", "Europe/Paris"),
         post_hours=post_hours,
@@ -385,7 +387,7 @@ def generate_pin_copy(cfg: Config, row: dict[str, str]) -> tuple[str, str, str]:
         ],
     }
     request = urllib.request.Request(
-        OPENAI_URL,
+        cfg.openai_url,
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {cfg.openai_api_key}",
